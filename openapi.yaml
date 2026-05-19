@@ -1,0 +1,935 @@
+openapi: 3.0.3
+
+info:
+  title: 영업 일일 보고 시스템 API
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+
+security:
+  - bearerAuth: []
+
+# ──────────────────────────────────────────
+# Paths
+# ──────────────────────────────────────────
+
+paths:
+
+  # ── Auth ──────────────────────────────
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: 로그인
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 로그인 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: 로그아웃
+      responses:
+        '200':
+          $ref: '#/components/responses/NullData'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ── Reports ───────────────────────────
+
+  /reports:
+    get:
+      tags: [Reports]
+      summary: 보고서 목록 조회
+      description: STAFF는 본인 보고서만, SUPERVISOR는 전체 조회
+      parameters:
+        - name: month
+          in: query
+          description: "조회 월 (형식: YYYY-MM, 기본값: 당월)"
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}$'
+            example: '2026-05'
+        - name: staff_id
+          in: query
+          description: 사원 필터 (SUPERVISOR만 유효)
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 보고서 목록
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ReportSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Reports]
+      summary: 보고서 생성 (STAFF)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReportRequest'
+      responses:
+        '201':
+          description: 생성된 보고서
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ReportDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: 해당 날짜 보고서 이미 존재
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: REPORT_ALREADY_EXISTS
+                  message: 해당 날짜 보고서가 이미 존재합니다.
+
+  /reports/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+
+    get:
+      tags: [Reports]
+      summary: 보고서 상세 조회
+      description: STAFF는 본인 보고서만, SUPERVISOR는 전체 조회
+      responses:
+        '200':
+          description: 보고서 상세
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ReportDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Reports]
+      summary: 보고서 수정 (STAFF 본인)
+      description: problem·plan 필드만 수정 가능. 방문 기록은 /visits API 사용
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateReportRequest'
+      responses:
+        '200':
+          description: 수정된 보고서
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ReportUpdated'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── Visit Records ─────────────────────
+
+  /reports/{reportId}/visits:
+    parameters:
+      - $ref: '#/components/parameters/ReportIdPath'
+
+    post:
+      tags: [Visit Records]
+      summary: 방문 기록 추가 (STAFF 본인)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VisitRecordRequest'
+      responses:
+        '201':
+          description: 추가된 방문 기록
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/VisitRecord'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /reports/{reportId}/visits/{visitId}:
+    parameters:
+      - $ref: '#/components/parameters/ReportIdPath'
+      - $ref: '#/components/parameters/VisitIdPath'
+
+    put:
+      tags: [Visit Records]
+      summary: 방문 기록 수정 (STAFF 본인)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VisitRecordRequest'
+      responses:
+        '200':
+          description: 수정된 방문 기록
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/VisitRecord'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Visit Records]
+      summary: 방문 기록 삭제 (STAFF 본인)
+      description: 마지막 방문 기록은 삭제 불가
+      responses:
+        '200':
+          $ref: '#/components/responses/NullData'
+        '400':
+          description: 마지막 방문 기록 삭제 시도
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: LAST_VISIT_CANNOT_DELETE
+                  message: 마지막 방문 기록은 삭제할 수 없습니다.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── Comments ──────────────────────────
+
+  /reports/{reportId}/comments:
+    parameters:
+      - $ref: '#/components/parameters/ReportIdPath'
+
+    post:
+      tags: [Comments]
+      summary: 댓글 등록 (SUPERVISOR)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentRequest'
+      responses:
+        '201':
+          description: 등록된 댓글
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Comment'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /reports/{reportId}/comments/{commentId}:
+    parameters:
+      - $ref: '#/components/parameters/ReportIdPath'
+      - $ref: '#/components/parameters/CommentIdPath'
+
+    delete:
+      tags: [Comments]
+      summary: 댓글 삭제 (SUPERVISOR 본인)
+      responses:
+        '200':
+          $ref: '#/components/responses/NullData'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── Customers ─────────────────────────
+
+  /customers:
+    get:
+      tags: [Customers]
+      summary: 고객 목록 조회
+      parameters:
+        - name: q
+          in: query
+          description: 회사명 또는 담당자명 부분 검색
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 고객 목록
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Customer'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Customers]
+      summary: 고객 등록 (SUPERVISOR)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCustomerRequest'
+      responses:
+        '201':
+          description: 등록된 고객
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Customer'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /customers/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+
+    put:
+      tags: [Customers]
+      summary: 고객 수정 (SUPERVISOR)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCustomerRequest'
+      responses:
+        '200':
+          description: 수정된 고객
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Customer'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ── Staff ─────────────────────────────
+
+  /staff:
+    get:
+      tags: [Staff]
+      summary: 영업사원 목록 조회 (SUPERVISOR)
+      parameters:
+        - name: q
+          in: query
+          description: 이름 또는 이메일 부분 검색
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 영업사원 목록
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StaffDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags: [Staff]
+      summary: 영업사원 등록 (SUPERVISOR)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateStaffRequest'
+      responses:
+        '201':
+          description: 등록된 영업사원
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/StaffDetail'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: 이메일 중복
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: EMAIL_ALREADY_EXISTS
+                  message: 이미 등록된 이메일입니다.
+
+  /staff/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+
+    put:
+      tags: [Staff]
+      summary: 영업사원 수정 (SUPERVISOR)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStaffRequest'
+      responses:
+        '200':
+          description: 수정된 영업사원
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/StaffDetail'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+# ──────────────────────────────────────────
+# Components
+# ──────────────────────────────────────────
+
+components:
+
+  # ── Security ──────────────────────────
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  # ── Parameters ────────────────────────
+
+  parameters:
+    IdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+    ReportIdPath:
+      name: reportId
+      in: path
+      required: true
+      schema:
+        type: integer
+    VisitIdPath:
+      name: visitId
+      in: path
+      required: true
+      schema:
+        type: integer
+    CommentIdPath:
+      name: commentId
+      in: path
+      required: true
+      schema:
+        type: integer
+
+  # ── Responses ─────────────────────────
+
+  responses:
+    NullData:
+      description: 성공 (반환 데이터 없음)
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: object
+                nullable: true
+            example:
+              data: null
+    BadRequest:
+      description: 요청 파라미터 오류
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: 미인증
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: 권한 없음
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: 리소스 없음
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  # ── Schemas ───────────────────────────
+
+  schemas:
+
+    # ── Enums (Prisma: enum Role, enum CommentTarget) ──
+
+    Role:
+      type: string
+      description: "Prisma: enum Role { STAFF SUPERVISOR }"
+      enum: [STAFF, SUPERVISOR]
+
+    CommentTarget:
+      type: string
+      description: "Prisma: enum CommentTarget { PROBLEM PLAN }"
+      enum: [PROBLEM, PLAN]
+
+    # ── Error ──
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+
+    # ── Auth ──
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    LoginResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            token:
+              type: string
+            user:
+              $ref: '#/components/schemas/StaffDetail'
+
+    # ── Staff (Prisma: model SalesStaff → @@map("sales_staff")) ──
+
+    StaffSummary:
+      x-prisma-model: SalesStaff
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+    StaffDetail:
+      x-prisma-model: SalesStaff
+      description: "password 필드는 응답에서 제외"
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          description: "Prisma: @unique"
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/Role'
+        department:
+          description: "Prisma: String?"
+          type: string
+          nullable: true
+        created_at:
+          description: "Prisma: @default(now()) @map(\"created_at\")"
+          type: string
+          format: date-time
+
+    CreateStaffRequest:
+      x-prisma-model: SalesStaff
+      type: object
+      required: [name, email, password, role]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        role:
+          $ref: '#/components/schemas/Role'
+        department:
+          type: string
+
+    UpdateStaffRequest:
+      x-prisma-model: SalesStaff
+      type: object
+      properties:
+        name:
+          type: string
+        role:
+          $ref: '#/components/schemas/Role'
+        department:
+          type: string
+        password:
+          description: 재설정 시에만 포함
+          type: string
+
+    # ── Customer (Prisma: model Customer → @@map("customer")) ──
+
+    CustomerSummary:
+      x-prisma-model: Customer
+      type: object
+      properties:
+        id:
+          type: integer
+        company_name:
+          description: "Prisma: @map(\"company_name\")"
+          type: string
+        contact_name:
+          description: "Prisma: @map(\"contact_name\")"
+          type: string
+
+    Customer:
+      x-prisma-model: Customer
+      type: object
+      properties:
+        id:
+          type: integer
+        company_name:
+          description: "Prisma: @map(\"company_name\")"
+          type: string
+        contact_name:
+          description: "Prisma: @map(\"contact_name\")"
+          type: string
+        phone:
+          description: "Prisma: String?"
+          type: string
+          nullable: true
+        address:
+          description: "Prisma: String?"
+          type: string
+          nullable: true
+        created_at:
+          description: "Prisma: @default(now()) @map(\"created_at\")"
+          type: string
+          format: date-time
+
+    CreateCustomerRequest:
+      x-prisma-model: Customer
+      type: object
+      required: [company_name, contact_name]
+      properties:
+        company_name:
+          type: string
+        contact_name:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+
+    UpdateCustomerRequest:
+      x-prisma-model: Customer
+      type: object
+      properties:
+        company_name:
+          type: string
+        contact_name:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+
+    # ── Visit Record (Prisma: model VisitRecord → @@map("visit_record")) ──
+
+    VisitRecord:
+      x-prisma-model: VisitRecord
+      type: object
+      properties:
+        id:
+          type: integer
+        customer:
+          $ref: '#/components/schemas/CustomerSummary'
+        visit_content:
+          description: "Prisma: @db.Text @map(\"visit_content\")"
+          type: string
+        created_at:
+          description: "Prisma: @default(now()) @map(\"created_at\")"
+          type: string
+          format: date-time
+
+    VisitRecordRequest:
+      x-prisma-model: VisitRecord
+      type: object
+      required: [customer_id, visit_content]
+      properties:
+        customer_id:
+          description: "Prisma: customerId FK → Customer"
+          type: integer
+        visit_content:
+          description: "Prisma: @db.Text"
+          type: string
+
+    # ── Comment (Prisma: model Comment → @@map("comment")) ──
+
+    Comment:
+      x-prisma-model: Comment
+      type: object
+      properties:
+        id:
+          type: integer
+        target_type:
+          $ref: '#/components/schemas/CommentTarget'
+        content:
+          description: "Prisma: @db.Text"
+          type: string
+        author:
+          $ref: '#/components/schemas/StaffSummary'
+        created_at:
+          description: "Prisma: @default(now()) @map(\"created_at\")"
+          type: string
+          format: date-time
+
+    CreateCommentRequest:
+      x-prisma-model: Comment
+      type: object
+      required: [target_type, content]
+      properties:
+        target_type:
+          $ref: '#/components/schemas/CommentTarget'
+        content:
+          type: string
+
+    # ── Report (Prisma: model DailyReport → @@map("daily_report")) ──
+
+    ReportSummary:
+      x-prisma-model: DailyReport
+      type: object
+      properties:
+        id:
+          type: integer
+        report_date:
+          description: "Prisma: @db.Date @map(\"report_date\")"
+          type: string
+          format: date
+        staff:
+          $ref: '#/components/schemas/StaffSummary'
+        visit_count:
+          type: integer
+        has_problem:
+          type: boolean
+        has_plan:
+          type: boolean
+        created_at:
+          description: "Prisma: @default(now()) @map(\"created_at\")"
+          type: string
+          format: date-time
+
+    ReportDetail:
+      x-prisma-model: DailyReport
+      description: "Prisma: @@unique([salesStaffId, reportDate]) — 사원당 하루 1건"
+      type: object
+      properties:
+        id:
+          type: integer
+        report_date:
+          description: "Prisma: @db.Date @map(\"report_date\")"
+          type: string
+          format: date
+        staff:
+          $ref: '#/components/schemas/StaffDetail'
+        visits:
+          type: array
+          items:
+            $ref: '#/components/schemas/VisitRecord'
+        problem:
+          description: "Prisma: String? @db.Text"
+          type: string
+          nullable: true
+        plan:
+          description: "Prisma: String? @db.Text"
+          type: string
+          nullable: true
+        comments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+        created_at:
+          description: "Prisma: @default(now()) @map(\"created_at\")"
+          type: string
+          format: date-time
+        updated_at:
+          description: "Prisma: @updatedAt @map(\"updated_at\")"
+          type: string
+          format: date-time
+
+    ReportUpdated:
+      x-prisma-model: DailyReport
+      type: object
+      properties:
+        id:
+          type: integer
+        problem:
+          description: "Prisma: String? @db.Text"
+          type: string
+          nullable: true
+        plan:
+          description: "Prisma: String? @db.Text"
+          type: string
+          nullable: true
+        updated_at:
+          description: "Prisma: @updatedAt @map(\"updated_at\")"
+          type: string
+          format: date-time
+
+    CreateReportRequest:
+      x-prisma-model: DailyReport
+      description: "Prisma: @@unique([salesStaffId, reportDate]) — 중복 시 409"
+      type: object
+      required: [report_date, visits]
+      properties:
+        report_date:
+          description: "Prisma: @db.Date"
+          type: string
+          format: date
+        visits:
+          description: "Prisma: VisitRecord[] — 최소 1건 필수"
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/VisitRecordRequest'
+        problem:
+          description: "Prisma: String? @db.Text"
+          type: string
+        plan:
+          description: "Prisma: String? @db.Text"
+          type: string
+
+    UpdateReportRequest:
+      x-prisma-model: DailyReport
+      type: object
+      properties:
+        problem:
+          description: "Prisma: String? @db.Text"
+          type: string
+        plan:
+          description: "Prisma: String? @db.Text"
+          type: string

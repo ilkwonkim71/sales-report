@@ -1,0 +1,46 @@
+{
+  "name": "sales-report",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "eslint"
+    ]
+  },
+  "dependencies": {
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.0.0",
+    "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/react": "^16.0.0",
+    "@testing-library/user-event": "^14.0.0",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^15.0.0",
+    "husky": "^9.1.7",
+    "jest": "^30.0.0",
+    "jest-environment-jsdom": "^30.0.0",
+    "lint-staged": "^17.0.5",
+    "typescript": "^5.0.0"
+  }
+}

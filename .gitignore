@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Build
+dist/
+build/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Vercel
+.vercel/
+
+# Coverage
+coverage/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
