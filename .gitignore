@@ -30,3 +30,9 @@ npm-debug.log*
 
 # Init logs
 *.txt
+
+# Prisma generated client
+src/generated/
+
+tsconfig.tsbuildinfo
+

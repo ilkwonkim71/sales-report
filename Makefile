@@ -1,4 +1,4 @@
-.PHONY: dev build start lint lint-fix test test-watch test-coverage deploy deploy-preview
+.PHONY: dev build start lint lint-fix test test-watch test-coverage deploy deploy-preview db:migrate db:migrate:prod db:seed db:reset db:studio
 
 # ── Local development ──────────────────────────────────────────
 dev:
@@ -33,3 +33,19 @@ deploy:
 
 deploy-preview:
 	npx vercel --yes
+
+# ── Database ───────────────────────────────────────────────────
+db:migrate:
+	npx prisma migrate dev
+
+db:migrate:prod:
+	npx prisma migrate deploy
+
+db:seed:
+	npx prisma db seed
+
+db:reset:
+	npx prisma migrate reset --force
+
+db:studio:
+	npx prisma studio
