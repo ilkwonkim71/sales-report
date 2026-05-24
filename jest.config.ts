@@ -14,6 +14,7 @@ const config: Config = {
     "<rootDir>/src/**/*.test.tsx",
     "<rootDir>/tests/**/*.test.ts",
     "<rootDir>/tests/**/*.test.tsx",
+    "<rootDir>/src/**/*.integration.test.ts",
   ],
   coverageDirectory: "coverage",
   collectCoverageFrom: [
