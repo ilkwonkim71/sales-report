@@ -33,6 +33,8 @@ const validPayload = {
   exp: Math.floor(Date.now() / 1000) + 3600,
 }
 
+const dummyContext = { params: Promise.resolve({}) }
+
 function makeRequest(token?: string): NextRequest {
   const headers: Record<string, string> = {}
   if (token !== undefined) {
@@ -55,7 +57,7 @@ beforeEach(() => {
 describe("POST /api/v1/auth/logout", () => {
   // AUTH-007: 토큰 없이 보호 API 호출
   it("AUTH-007: Authorization 헤더 없음 → 401", async () => {
-    const res = await POST(makeRequest())
+    const res = await POST(makeRequest(), dummyContext)
     expect(res.status).toBe(401)
   })
 
@@ -67,7 +69,7 @@ describe("POST /api/v1/auth/logout", () => {
       throw err
     })
 
-    const res = await POST(makeRequest("expired.token.here"))
+    const res = await POST(makeRequest("expired.token.here"), dummyContext)
     expect(res.status).toBe(401)
   })
 
@@ -75,7 +77,7 @@ describe("POST /api/v1/auth/logout", () => {
   it("AUTH-009: 로그아웃 성공 → 200 { data: null }", async () => {
     mockVerify.mockReturnValue(validPayload)
 
-    const res = await POST(makeRequest("valid.token"))
+    const res = await POST(makeRequest("valid.token"), dummyContext)
     const body = await res.json()
 
     expect(res.status).toBe(200)
@@ -87,7 +89,7 @@ describe("POST /api/v1/auth/logout", () => {
     mockVerify.mockReturnValue(validPayload)
     mockIsBlacklisted.mockReturnValue(true)
 
-    const res = await POST(makeRequest("blacklisted.token"))
+    const res = await POST(makeRequest("blacklisted.token"), dummyContext)
     expect(res.status).toBe(401)
   })
 })

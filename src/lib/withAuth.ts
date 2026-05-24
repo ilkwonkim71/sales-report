@@ -8,7 +8,7 @@ type RouteContext = { params: Promise<Record<string, string>> }
 export type AuthedHandler = (
   req: NextRequest,
   user: AuthenticatedUser,
-  context?: RouteContext
+  context: RouteContext
 ) => Promise<Response>
 
 function unauthorized(message: string): Response {
@@ -19,7 +19,7 @@ function unauthorized(message: string): Response {
 }
 
 export function withAuth(handler: AuthedHandler) {
-  return async (req: NextRequest, context?: RouteContext): Promise<Response> => {
+  return async (req: NextRequest, context: RouteContext): Promise<Response> => {
     const authHeader = req.headers.get("Authorization")
     if (!authHeader?.startsWith("Bearer ")) {
       return unauthorized("Authentication required")
