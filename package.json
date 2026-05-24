@@ -51,6 +51,7 @@
     "jest-environment-jsdom": "^30.0.0",
     "lint-staged": "^17.0.5",
     "prisma": "^7.8.0",
+    "ts-node": "^10.9.2",
     "tsx": "^4.22.3",
     "typescript": "^5.0.0"
   },
