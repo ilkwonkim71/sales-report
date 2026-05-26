@@ -36,3 +36,7 @@ src/generated/
 
 tsconfig.tsbuildinfo
 
+
+# Claude Code internal
+.claude/
+.playwright-mcp/
