@@ -30,7 +30,16 @@ export async function POST(req: NextRequest): Promise<Response> {
     )
   }
 
-  const staff = await prisma.salesStaff.findUnique({ where: { email } })
+  let staff
+  try {
+    staff = await prisma.salesStaff.findUnique({ where: { email } })
+  } catch (dbErr) {
+    console.error("[login] DB error:", dbErr)
+    return Response.json(
+      { error: { code: "SERVER_ERROR", message: "데이터베이스 연결 오류가 발생했습니다." } },
+      { status: 500 }
+    )
+  }
 
   // Use a fixed dummy hash when staff is not found to prevent timing attacks.
   const hashToCompare =

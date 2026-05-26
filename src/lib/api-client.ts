@@ -1,10 +1,3 @@
-/**
- * API client helper.
- * - Automatically attaches Authorization header from localStorage.
- * - Converts snake_case response keys to camelCase recursively.
- */
-
-/** Recursively convert snake_case object keys to camelCase. */
 function snakeToCamel(str: string): string {
   return str.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase())
 }
@@ -53,7 +46,16 @@ export async function apiFetch<T>(
 
   const response = await fetch(path, { ...options, headers })
 
-  const json: unknown = await response.json()
+  let json: unknown
+  try {
+    json = await response.json()
+  } catch {
+    throw new ApiError(
+      "SERVER_ERROR",
+      `서버 오류 (HTTP ${response.status})`,
+      response.status,
+    )
+  }
 
   if (!response.ok) {
     const errBody = json as { error?: { code?: string; message?: string } }
