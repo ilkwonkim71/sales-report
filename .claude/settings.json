@@ -1,0 +1,18 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "$data = $input | ConvertFrom-Json; $f = $data.tool_input.file_path; if ($f -match '\\.(ts|tsx)$') { npx eslint --fix $f 2>$null }",
+            "statusMessage": "ESLint 자동 수정 중...",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

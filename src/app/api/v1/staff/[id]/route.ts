@@ -3,8 +3,6 @@ import bcrypt from "bcryptjs"
 import { withAuth } from "@/lib/withAuth"
 import { prisma } from "@/lib/prisma"
 
-type Context = { params: Promise<{ id: string }> }
-
 function forbidden() {
   return Response.json(
     { error: { code: "FORBIDDEN", message: "Access denied" } },
@@ -37,7 +35,7 @@ function toDto(s: {
   }
 }
 
-export const GET = withAuth(async (_req: NextRequest, user, context: Context) => {
+export const GET = withAuth(async (_req: NextRequest, user, context) => {
   if (user.role !== "SUPERVISOR") return forbidden()
 
   const { id } = await context.params
@@ -50,7 +48,7 @@ export const GET = withAuth(async (_req: NextRequest, user, context: Context) =>
   return Response.json({ data: toDto(staff) })
 })
 
-export const PUT = withAuth(async (req: NextRequest, user, context: Context) => {
+export const PUT = withAuth(async (req: NextRequest, user, context) => {
   if (user.role !== "SUPERVISOR") return forbidden()
 
   const { id } = await context.params
